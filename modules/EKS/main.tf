@@ -1,3 +1,4 @@
+
 #create EKS Cluster eks_cluster
 
 resource "aws_eks_cluster" "eks_cluster" {
@@ -18,4 +19,23 @@ resource "aws_eks_cluster" "eks_cluster" {
         var.PRI_SUB4_ID
         ]
   }
+}
+
+# Manage VPC CNI add-on with prefix delegation enabled, so small instance
+# types (t3.micro) can host enough pod IPs without manual CNI config each time
+resource "aws_eks_addon" "vpc_cni" {
+  cluster_name = aws_eks_cluster.eks_cluster.name
+  addon_name   = "vpc-cni"
+
+  configuration_values = jsonencode({
+    env = {
+      ENABLE_PREFIX_DELEGATION = "true"
+      WARM_PREFIX_TARGET       = "1"
+    }
+  })
+
+  resolve_conflicts_on_create = "OVERWRITE"
+  resolve_conflicts_on_update = "OVERWRITE"
+
+  depends_on = [aws_eks_cluster.eks_cluster]
 }
